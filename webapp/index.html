@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Robustness Analyzer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Source+Sans+3:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --bg-primary: #0f1419;
+            --bg-secondary: #141b22;
+            --bg-card: #1a2332;
+            --bg-elevated: #1e2a3a;
+            --accent-teal: #0d9488;
+            --accent-teal-light: #5eead4;
+            --accent-blue: #0ea5e9;
+            --text-primary: #f0f9ff;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-subtle: rgba(14, 165, 233, 0.15);
+            --graph-bg: #f0f9ff;
+        }
+        
+        html, body {
+            height: 100%;
+            font-family: 'Source Sans 3', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow: hidden;
+        }
+        
+        .app {
+            height: 100vh;
+            display: grid;
+            grid-template-rows: auto 1fr;
+            grid-template-columns: 360px 1fr;
+            gap: 0;
+        }
+        
+        /* Header */
+        header {
+            grid-column: 1 / -1;
+            background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 14px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        
+        .logo-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--accent-teal) 0%, #0891b2 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(13, 148, 136, 0.35);
+        }
+        
+        .logo-icon svg {
+            width: 26px;
+            height: 26px;
+            color: white;
+        }
+        
+        .logo-text h1 {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 22px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-teal-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .logo-text p {
+            font-size: 14px;
+            color: var(--accent-teal);
+            letter-spacing: 0.02em;
+            margin-top: 4px;
+            font-weight: 500;
+        }
+        
+        .formula {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            color: var(--text-secondary);
+            background: var(--bg-elevated);
+            padding: 10px 18px;
+            border-radius: 8px;
+            border: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .formula .rho { 
+            color: var(--accent-teal-light); 
+            font-style: italic;
+        }
+        
+        .formula .frac {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 11px;
+            line-height: 1.1;
+        }
+        
+        .formula .frac-num {
+            border-bottom: 1px solid var(--text-secondary);
+            padding-bottom: 2px;
+        }
+        
+        .formula .frac-den {
+            padding-top: 2px;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-subtle);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow-y: auto;
+        }
+        
+        .section-title {
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+        
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        .input-group label {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        
+        textarea {
+            width: 100%;
+            height: 280px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            color: var(--text-primary);
+            resize: none;
+            transition: all 0.2s ease;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent-teal);
+            box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+        }
+        
+        .target-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 10px 12px;
+        }
+        
+        .target-input .icon {
+            width: 18px;
+            height: 18px;
+            background: #ef4444;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .target-input .icon::after {
+            content: '';
+            width: 7px;
+            height: 7px;
+            background: white;
+            border-radius: 50%;
+        }
+        
+        .target-input input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 15px;
+            color: var(--text-primary);
+            outline: none;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 4px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 14px 18px;
+            border-radius: 8px;
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+        }
+        
+        .btn-secondary {
+            background: var(--bg-elevated);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-subtle);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-teal) 0%, #0891b2 100%);
+            color: white;
+            box-shadow: 0 4px 16px rgba(13, 148, 136, 0.35);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(13, 148, 136, 0.45);
+        }
+        
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .btn-reset-icon {
+            width: 22px;
+            height: 22px;
+            min-width: 22px;
+            padding: 3px;
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: none;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-reset-icon:hover {
+            background: var(--bg-elevated);
+            color: var(--accent-teal-light);
+            border-color: var(--accent-teal);
+        }
+        
+        .btn-reset-icon svg {
+            width: 14px;
+            height: 14px;
+        }
+        
+        /* Stats Section */
+        .stats-section {
+            background: var(--bg-primary);
+            border-radius: 8px;
+            padding: 12px;
+            border: 1px solid var(--border-subtle);
+        }
+        
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+        }
+        
+        .stats-row:not(:last-child) {
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+        
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .stat-value.critical { color: #f43f5e; }
+        .stat-value.safe { color: var(--accent-teal-light); }
+        
+        /* Main Content - scrollable */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            gap: 16px;
+            background: var(--bg-primary);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        
+        /* Tab Navigation */
+        .tab-nav {
+            display: flex;
+            gap: 0;
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            padding: 4px;
+            width: fit-content;
+        }
+        
+        .tab-btn {
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+            flex: none;
+        }
+        
+        .tab-btn:hover {
+            color: var(--text-secondary);
+        }
+        
+        .tab-btn.active {
+            background: linear-gradient(135deg, var(--accent-teal) 0%, #0891b2 100%);
+            color: white;
+            box-shadow: 0 2px 10px rgba(13, 148, 136, 0.4);
+        }
+        
+        /* Graph Panel */
+        .graph-panel {
+            background: var(--bg-card);
+            border-radius: 12px;
+            border: 1px solid var(--border-subtle);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+        
+        .panel-header {
+            padding: 12px 16px;
+            background: var(--bg-elevated);
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .panel-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .panel-title h3 {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 15px;
+            font-weight: 600;
+        }
+        
+        .panel-badge {
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: rgba(13, 148, 136, 0.2);
+            color: var(--accent-teal-light);
+        }
+        
+        .graph-container {
+            flex: 1;
+            position: relative;
+            background: var(--graph-bg);
+            height: 500px;
+            min-height: 500px;
+        }
+        
+        .graph-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: var(--graph-bg);
+        }
+        
+        .graph-placeholder {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            background: var(--graph-bg);
+        }
+        
+        .graph-placeholder svg {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 12px;
+            opacity: 0.4;
+            stroke: #666;
+        }
+        
+        .graph-placeholder p {
+            font-size: 13px;
+            color: #666;
+        }
+        
+        .graph-placeholder small {
+            font-size: 11px;
+            color: #888;
+            margin-top: 4px;
+        }
+        
+        /* Results Table */
+        .results-panel {
+            background: var(--bg-card);
+            border-radius: 12px;
+            border: 1px solid var(--border-subtle);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+        
+        .results-table {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .results-table table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        
+        .results-table thead {
+            background: var(--bg-elevated);
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        
+        .results-table th {
+            padding: 12px 14px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 12px;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        
+        .results-table td {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+        }
+        
+        .results-table tr.critical {
+            background: rgba(244, 63, 94, 0.1);
+        }
+        
+        .inv-set { color: #f43f5e; }
+        .empty-set { color: var(--text-muted); }
+        
+        .robustness-bar {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .bar-track {
+            flex: 1;
+            height: 5px;
+            background: var(--bg-elevated);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .bar-fill {
+            height: 100%;
+            border-radius: 2px;
+        }
+        
+        .bar-fill.safe { background: var(--accent-teal); }
+        .bar-fill.critical { background: #f43f5e; }
+        
+        .robustness-value {
+            width: 52px;
+            text-align: right;
+            font-size: 13px;
+        }
+        
+        .robustness-value.safe { color: var(--accent-teal-light); }
+        .robustness-value.critical { color: #f43f5e; }
+        
+        /* Error Toast */
+        .error-toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #dc2626;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            box-shadow: 0 10px 30px rgba(220, 38, 38, 0.3);
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        
+        .error-toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-subtle);
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header>
+            <div class="logo">
+                <div class="logo-icon">
+                    <!-- Medical Cross + Robot Arm Icon -->
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v4m0 4v8m-4-8h8"/>
+                        <circle cx="12" cy="12" r="9" stroke-width="1.5"/>
+                        <path stroke-linecap="round" d="M8 8l1.5 1.5M16 8l-1.5 1.5M8 16l1.5-1.5M16 16l-1.5-1.5"/>
+                    </svg>
+                </div>
+                <div class="logo-text">
+                    <h1>CTMC Analyser and Recovery Planner</h1>
+                    <p>ROBUST STABILITY EVALUATION OF PERTURBED CONTINUOUS-TIME MARKOV CHAINS</p>
+                </div>
+            </div>
+            <div class="formula">
+                <span class="rho">inx(i,j)</span> = 1 − 
+                <span class="frac">
+                    <span class="frac-num">|𝕆(i,j)|</span>
+                    <span class="frac-den">|𝒮| − 1</span>
+                </span>
+            </div>
+        </header>
+        
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="section-title">CTMC Configurations</div>
+                <button class="btn-reset-icon" onclick="resetAll()" title="Reset All">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                </button>
+            </div>
+            <div>
+                <div class="input-group">
+                    <label>Adjacency List (JSON)</label>
+                    <textarea id="graphInput" spellcheck="false" placeholder='{"0": [], "1": [0], "2": [0, 1], ...}'></textarea>
+                </div>
+            </div>
+            
+            <div>
+                <div class="section-title">Target State α</div>
+                <div class="target-input">
+                    <div class="icon"></div>
+                    <input id="targetInput" type="number" value="0" placeholder="Target state sT">
+                </div>
+            </div>
+            
+            <div class="btn-group">
+                <button class="btn-secondary" onclick="visualizeNetwork()">Visualize</button>
+                <button class="btn-primary" id="analyzeBtn" onclick="analyzeNetwork()">Analyze</button>
+            </div>
+            
+            <div>
+                <div class="section-title">Network Statistics</div>
+                <div class="stats-section">
+                    <div class="stats-row">
+                        <span class="stat-label">Stability</span>
+                        <span class="stat-value" id="feasibility" style="font-size: 16px;">—</span>
+                    </div>
+                    <div class="stats-row">
+                        <span class="stat-label">States |𝒮|</span>
+                        <span class="stat-value" id="nodeCount">—</span>
+                    </div>
+                    <div class="stats-row">
+                        <span class="stat-label">Transitions</span>
+                        <span class="stat-value" id="edgeCount">—</span>
+                    </div>
+                    <div class="stats-row hidden" id="criticalRow">
+                        <span class="stat-label">Critical (inx &lt; 1)</span>
+                        <span class="stat-value critical" id="criticalCount">—</span>
+                    </div>
+                    <div class="stats-row hidden" id="safeRow">
+                        <span class="stat-label">Robust (inx = 1)</span>
+                        <span class="stat-value safe" id="safeCount">—</span>
+                    </div>
+                    <div class="stats-row hidden" id="unreachableRow">
+                        <span class="stat-label">Unreachable States</span>
+                        <span class="stat-value critical" id="unreachableCount">—</span>
+                    </div>
+                    <div class="stats-row hidden" id="subsetsRow">
+                        <span class="stat-label">Invariant Subsets</span>
+                        <span class="stat-value" id="subsetCount" style="color: #f97316;">—</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Tab Navigation -->
+            <div class="tab-nav">
+                <button class="tab-btn active" id="tabVisualize" onclick="switchTab('visualize')">Network Structure</button>
+                <button class="tab-btn" id="tabAnalyze" onclick="switchTab('analyze')">Analysis</button>
+            </div>
+            
+            <!-- Graph Panel -->
+            <div class="graph-panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <h3 id="panelTitle">CTMC Structure</h3>
+                        <span class="panel-badge" id="panelBadge">Force-Directed</span>
+                    </div>
+                    <div id="panelInfo" style="font-size: 11px; color: var(--text-muted);"></div>
+                </div>
+                <div class="graph-container">
+                    <!-- Visualize View -->
+                    <iframe id="visualizeFrame" class="hidden"></iframe>
+                    <div class="graph-placeholder" id="visualizePlaceholder">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="3"/>
+                            <circle cx="19" cy="5" r="2"/>
+                            <circle cx="5" cy="5" r="2"/>
+                            <circle cx="5" cy="19" r="2"/>
+                            <circle cx="19" cy="19" r="2"/>
+                            <path d="M12 9V6M9 12H6M15 12h3M12 15v3"/>
+                        </svg>
+                        <p>MDP State Space Visualization</p>
+                        <small>States colored by distance to target s<sub>T</sub></small>
+                    </div>
+                    
+                    <!-- Analyze View -->
+                    <iframe id="analyzeFrame" class="hidden"></iframe>
+                    <div class="graph-placeholder hidden" id="analyzePlaceholder">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2m6 10V7"/>
+                        </svg>
+                        <p>Transition Certification View</p>
+                        <small>Red edges = uncertified (ρ &lt; 1)</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Results Table - Certification -->
+            <div class="results-panel" id="certificationPanel">
+                <div class="panel-header" style="flex-wrap: wrap;">
+                    <div class="panel-title" style="flex: 1; min-width: 200px;">
+                        <h3 style="white-space: nowrap;">Transition Certification Results</h3>
+                    </div>
+                    <div style="font-size: 11px; color: var(--accent-teal-light); font-family: 'JetBrains Mono', monospace;">
+                        ρ(i,j) = 1 − |𝕆(i,j)| / (|𝒮| − 1)
+                    </div>
+                </div>
+                <div class="results-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 100px;">Transition</th>
+                                <th>Invariant Subset 𝕆(i,j)</th>
+                                <th style="width: 140px;">ρ(i,j)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultsBody">
+                            <tr>
+                                <td colspan="3" style="text-align:center; color: var(--text-muted); padding: 30px;">
+                                    Click "Analyze" to certify surgical plan transitions
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Results Table - Recovery (hidden by default) -->
+            <div class="results-panel hidden" id="recoveryPanel">
+                <div class="panel-header" style="flex-wrap: wrap;">
+                    <div class="panel-title" style="flex: 1; min-width: 200px;">
+                        <h3 style="white-space: nowrap;">🔧 Minimal Recovery Plan</h3>
+                    </div>
+                    <div style="font-size: 11px; color: #f97316; font-family: 'JetBrains Mono', monospace;">
+                        Add transitions to make network stable
+                    </div>
+                </div>
+                <div class="results-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 80px;">Subset</th>
+                                <th>Attractor</th>
+                                <th style="width: 150px;">Recovery</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recoveryBody">
+                            <tr>
+                                <td colspan="3" style="text-align:center; color: var(--text-muted); padding: 30px;">
+                                    Click "Recover" to compute minimal recovery plan
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <div class="error-toast" id="errorToast"></div>
+
+    <script>
+        const API = 'http://localhost:5001/api';
+        let currentTab = 'visualize';
+        let isFeasible = null;  // Track feasibility state
+        
+        // Load default graph
+        fetch(`${API}/default-graph`)
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('graphInput').value = JSON.stringify(data.graph, null, 2);
+                document.getElementById('targetInput').value = data.target;
+            })
+            .catch(e => showError('Backend not running. Start: cd webapp/backend && python3 app.py'));
+        
+        function showError(msg) {
+            const toast = document.getElementById('errorToast');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 5000);
+        }
+        
+        function updateActionButton(feasible) {
+            const btn = document.getElementById('analyzeBtn');
+            if (feasible) {
+                btn.textContent = 'Analyze';
+                btn.onclick = analyzeNetwork;
+                btn.style.background = 'linear-gradient(135deg, var(--accent-teal) 0%, #0891b2 100%)';
+            } else {
+                btn.textContent = 'Recover';
+                btn.onclick = recoverNetwork;
+                btn.style.background = 'linear-gradient(135deg, #f97316 0%, #dc2626 100%)';
+            }
+        }
+        
+        function updateTabLabels() {
+            // Update tab button text based on feasibility
+            const analyzeTab = document.getElementById('tabAnalyze');
+            if (isFeasible === false) {
+                analyzeTab.textContent = 'Recovery';
+            } else {
+                analyzeTab.textContent = 'Analysis';
+            }
+        }
+        
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            // Update tab buttons
+            document.getElementById('tabVisualize').classList.toggle('active', tab === 'visualize');
+            document.getElementById('tabAnalyze').classList.toggle('active', tab === 'analyze');
+            
+            // Update panel header based on tab and feasibility
+            if (tab === 'visualize') {
+                document.getElementById('panelTitle').textContent = 'CTMC State Space';
+                document.getElementById('panelBadge').textContent = isFeasible === false ? 'Infeasible' : 'Force-Directed';
+                document.getElementById('panelBadge').style.background = isFeasible === false ? 'rgba(239, 68, 68, 0.2)' : 'rgba(13, 148, 136, 0.2)';
+                document.getElementById('panelBadge').style.color = isFeasible === false ? '#f87171' : 'var(--accent-teal-light)';
+            } else {
+                if (isFeasible === false) {
+                    document.getElementById('panelTitle').textContent = 'Recovery Plan';
+                    document.getElementById('panelBadge').textContent = 'Minimal Edges';
+                    document.getElementById('panelBadge').style.background = 'rgba(249, 115, 22, 0.2)';
+                    document.getElementById('panelBadge').style.color = '#fb923c';
+                } else {
+                    document.getElementById('panelTitle').textContent = 'Transition Analysis';
+                    document.getElementById('panelBadge').textContent = 'Hierarchical';
+                    document.getElementById('panelBadge').style.background = 'rgba(13, 148, 136, 0.2)';
+                    document.getElementById('panelBadge').style.color = 'var(--accent-teal-light)';
+                }
+            }
+            
+            // Show/hide frames and placeholders
+            const vizFrame = document.getElementById('visualizeFrame');
+            const vizPlaceholder = document.getElementById('visualizePlaceholder');
+            const anaFrame = document.getElementById('analyzeFrame');
+            const anaPlaceholder = document.getElementById('analyzePlaceholder');
+            
+            if (tab === 'visualize') {
+                vizFrame.classList.toggle('hidden', !vizFrame.src);
+                vizPlaceholder.classList.toggle('hidden', !!vizFrame.src);
+                anaFrame.classList.add('hidden');
+                anaPlaceholder.classList.add('hidden');
+            } else {
+                anaFrame.classList.toggle('hidden', !anaFrame.src);
+                anaPlaceholder.classList.toggle('hidden', !!anaFrame.src);
+                vizFrame.classList.add('hidden');
+                vizPlaceholder.classList.add('hidden');
+            }
+            
+            // Show/hide certification vs recovery panels
+            const certPanel = document.getElementById('certificationPanel');
+            const recPanel = document.getElementById('recoveryPanel');
+            
+            if (isFeasible === false) {
+                certPanel.classList.add('hidden');
+                recPanel.classList.remove('hidden');
+            } else {
+                certPanel.classList.remove('hidden');
+                recPanel.classList.add('hidden');
+            }
+        }
+        
+        async function visualizeNetwork() {
+            try {
+                const graph = document.getElementById('graphInput').value;
+                const target = parseInt(document.getElementById('targetInput').value);
+                
+                // First check feasibility and get basic stats
+                const feasRes = await fetch(`${API}/check-feasibility`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({graph, target})
+                });
+                const feasData = await feasRes.json();
+                if (!feasData.success) throw new Error(feasData.error);
+                
+                isFeasible = feasData.feasible;
+                
+                // Update feasibility display
+                const feasEl = document.getElementById('feasibility');
+                if (feasData.feasible) {
+                    feasEl.textContent = '✅';
+                    feasEl.style.color = 'var(--accent-teal-light)';
+                } else {
+                    feasEl.textContent = '❌';
+                    feasEl.style.color = '#f43f5e';
+                }
+                
+                // Update basic stats (always show these)
+                document.getElementById('nodeCount').textContent = feasData.node_count;
+                document.getElementById('edgeCount').textContent = feasData.edge_count;
+                
+                // Hide Critical/Certified rows, show if infeasible show unreachable stats
+                document.getElementById('criticalRow').classList.add('hidden');
+                document.getElementById('safeRow').classList.add('hidden');
+                
+                if (!feasData.feasible) {
+                    document.getElementById('unreachableRow').classList.remove('hidden');
+                    document.getElementById('subsetsRow').classList.remove('hidden');
+                    document.getElementById('unreachableCount').textContent = feasData.unreachable_count;
+                    document.getElementById('subsetCount').textContent = feasData.subset_count;
+                } else {
+                    document.getElementById('unreachableRow').classList.add('hidden');
+                    document.getElementById('subsetsRow').classList.add('hidden');
+                }
+                
+                // Update action button and tab labels based on feasibility
+                updateActionButton(feasData.feasible);
+                updateTabLabels();
+                
+                // Get visualization graph
+                let graphEndpoint = feasData.feasible ? `${API}/graph/visualize` : `${API}/graph/infeasible`;
+                const res = await fetch(graphEndpoint, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({graph, target})
+                });
+                if (!res.ok) throw new Error('Failed to generate');
+                
+                const blob = await res.blob();
+                document.getElementById('visualizeFrame').src = URL.createObjectURL(blob);
+                
+                // Switch to visualize tab
+                switchTab('visualize');
+                document.getElementById('visualizeFrame').classList.remove('hidden');
+                document.getElementById('visualizePlaceholder').classList.add('hidden');
+                
+            } catch (e) {
+                showError('Failed: ' + e.message);
+            }
+        }
+        
+        async function analyzeNetwork() {
+            const btn = document.getElementById('analyzeBtn');
+            const originalText = btn.textContent;
+            btn.textContent = 'Analyzing...';
+            
+            try {
+                const graph = document.getElementById('graphInput').value;
+                const target = parseInt(document.getElementById('targetInput').value);
+                
+                // Get analysis results
+                const analysisRes = await fetch(`${API}/analyze`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({graph, target})
+                });
+                const data = await analysisRes.json();
+                if (!data.success) throw new Error(data.error);
+                
+                isFeasible = data.feasible;
+                
+                // Get visualize graph (blue gradient)
+                const vizRes = await fetch(`${API}/graph/visualize`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({graph, target})
+                });
+                const vizBlob = await vizRes.blob();
+                document.getElementById('visualizeFrame').src = URL.createObjectURL(vizBlob);
+                
+                // Get analyze graph (hierarchical)
+                const anaRes = await fetch(`${API}/graph/analyze`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({graph, target})
+                });
+                const anaBlob = await anaRes.blob();
+                document.getElementById('analyzeFrame').src = URL.createObjectURL(anaBlob);
+                
+                // Update stats
+                const critical = data.results.filter(r => r.size > 0).length;
+                const safe = data.results.filter(r => r.size === 0).length;
+                
+                // Feasibility check
+                const feasEl = document.getElementById('feasibility');
+                if (data.feasible) {
+                    feasEl.textContent = '✅';
+                    feasEl.style.color = 'var(--accent-teal-light)';
+                } else {
+                    feasEl.textContent = '❌';
+                    feasEl.style.color = '#f43f5e';
+                }
+                
+                document.getElementById('nodeCount').textContent = data.node_count;
+                document.getElementById('edgeCount').textContent = data.edge_count;
+                
+                // Show Critical/Certified rows for analysis
+                document.getElementById('criticalRow').classList.remove('hidden');
+                document.getElementById('safeRow').classList.remove('hidden');
+                document.getElementById('unreachableRow').classList.add('hidden');
+                document.getElementById('subsetsRow').classList.add('hidden');
+                
+                document.getElementById('criticalCount').textContent = critical;
+                document.getElementById('safeCount').textContent = safe;
+                
+                // Build table
+                let html = '';
+                for (const row of data.results) {
+                    const rowClass = row.size > 0 ? 'critical' : '';
+                    const robClass = row.size === 0 ? 'safe' : 'critical';
+                    
+                    html += `
+                        <tr class="${rowClass}">
+                            <td>(${row.edge[0]} → ${row.edge[1]})</td>
+                            <td class="${row.size > 0 ? 'inv-set' : 'empty-set'}">
+                                ${row.size > 0 ? `{${row.invariant_subset.join(', ')}}` : '∅'}
+                            </td>
+                            <td>
+                                <div class="robustness-bar">
+                                    <div class="bar-track">
+                                        <div class="bar-fill ${robClass}" style="width: ${row.robustness * 100}%"></div>
+                                    </div>
+                                    <span class="robustness-value ${robClass}">${row.robustness.toFixed(3)}</span>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }
+                document.getElementById('resultsBody').innerHTML = html;
+                
+                // Show certification panel, hide recovery panel
+                document.getElementById('certificationPanel').classList.remove('hidden');
+                document.getElementById('recoveryPanel').classList.add('hidden');
+                
+                // Switch to analyze tab
+                switchTab('analyze');
+                document.getElementById('analyzeFrame').classList.remove('hidden');
+                document.getElementById('analyzePlaceholder').classList.add('hidden');
+                
+            } catch (e) {
+                showError('Analysis failed: ' + e.message);
+            }
+            
+            btn.textContent = originalText;
+        }
+        
+        async function recoverNetwork() {
+            const btn = document.getElementById('analyzeBtn');
+            const originalText = btn.textContent;
+            btn.textContent = 'Computing...';
+            
+            try {
+                const graph = document.getElementById('graphInput').value;
+                const target = parseInt(document.getElementById('targetInput').value);
+                
+                // Get recovery plan
+                const recoveryRes = await fetch(`${API}/recovery`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({graph, target})
+                });
+                const data = await recoveryRes.json();
+                if (!data.success) throw new Error(data.error);
+                
+                // Get recovery graph visualization
+                const graphRes = await fetch(`${API}/graph/recovery`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({graph, target})
+                });
+                const graphBlob = await graphRes.blob();
+                document.getElementById('analyzeFrame').src = URL.createObjectURL(graphBlob);
+                
+                // Update stats to show recovery info
+                document.getElementById('unreachableRow').classList.remove('hidden');
+                document.getElementById('subsetsRow').classList.remove('hidden');
+                document.getElementById('unreachableCount').textContent = data.total_unreachable;
+                document.getElementById('subsetCount').textContent = data.unreachable_subsets.length;
+                
+                // Build recovery table
+                const subsetColors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#8b5cf6', '#ec4899', '#6366f1'];
+                let html = '';
+                
+                for (let i = 0; i < data.recovery_edges.length; i++) {
+                    const edge = data.recovery_edges[i];
+                    const color = subsetColors[i % subsetColors.length];
+                    
+                    html += `
+                        <tr>
+                            <td>
+                                <span style="display: inline-block; width: 12px; height: 12px; background: ${color}; border-radius: 50%; margin-right: 6px;"></span>
+                                #${i + 1}
+                            </td>
+                            <td style="font-family: 'JetBrains Mono', monospace;">
+                                {${edge.attractor.join(', ')}}
+                                <span style="color: var(--text-muted); font-size: 11px; margin-left: 8px;">
+                                    (${edge.subset.length} nodes total)
+                                </span>
+                            </td>
+                            <td>
+                                <span style="color: #ef4444; font-weight: 600; font-family: 'JetBrains Mono', monospace;">
+                                    ${edge.source} → ${edge.dest}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                }
+                
+                // Add summary row
+                html += `
+                    <tr style="background: var(--bg-elevated);">
+                        <td colspan="3" style="text-align: center; padding: 12px; color: var(--accent-teal-light);">
+                            ✨ Add <strong>${data.edges_needed}</strong> transition(s) to make network stable
+                        </td>
+                    </tr>
+                `;
+                
+                document.getElementById('recoveryBody').innerHTML = html;
+                
+                // Show recovery panel, hide certification panel
+                document.getElementById('certificationPanel').classList.add('hidden');
+                document.getElementById('recoveryPanel').classList.remove('hidden');
+                
+                // Switch to analyze tab (which now shows recovery)
+                switchTab('analyze');
+                document.getElementById('analyzeFrame').classList.remove('hidden');
+                document.getElementById('analyzePlaceholder').classList.add('hidden');
+                
+            } catch (e) {
+                showError('Recovery failed: ' + e.message);
+            }
+            
+            btn.textContent = originalText;
+        }
+        
+        function resetAll() {
+            // Reset feasibility state
+            isFeasible = null;
+            currentTab = 'visualize';
+            
+            // Reset stats display
+            document.getElementById('feasibility').textContent = '—';
+            document.getElementById('feasibility').style.color = 'var(--text-primary)';
+            document.getElementById('nodeCount').textContent = '—';
+            document.getElementById('edgeCount').textContent = '—';
+            document.getElementById('criticalCount').textContent = '—';
+            document.getElementById('safeCount').textContent = '—';
+            
+            // Hide all conditional stat rows
+            document.getElementById('criticalRow').classList.add('hidden');
+            document.getElementById('safeRow').classList.add('hidden');
+            document.getElementById('unreachableRow').classList.add('hidden');
+            document.getElementById('subsetsRow').classList.add('hidden');
+            
+            // Reset action button
+            const btn = document.getElementById('analyzeBtn');
+            btn.textContent = 'Analyze';
+            btn.onclick = analyzeNetwork;
+            btn.style.background = 'linear-gradient(135deg, var(--accent-teal) 0%, #0891b2 100%)';
+            
+            // Reset tab buttons
+            document.getElementById('tabVisualize').classList.add('active');
+            document.getElementById('tabAnalyze').classList.remove('active');
+            document.getElementById('tabAnalyze').textContent = 'Analysis';
+            
+            // Reset frames - remove src attribute entirely
+            const vizFrame = document.getElementById('visualizeFrame');
+            const anaFrame = document.getElementById('analyzeFrame');
+            vizFrame.removeAttribute('src');
+            anaFrame.removeAttribute('src');
+            
+            // Show placeholders, hide frames
+            vizFrame.classList.add('hidden');
+            document.getElementById('visualizePlaceholder').classList.remove('hidden');
+            anaFrame.classList.add('hidden');
+            document.getElementById('analyzePlaceholder').classList.add('hidden');
+            
+            // Reset panel header
+            document.getElementById('panelTitle').textContent = 'CTMC State Space';
+            document.getElementById('panelBadge').textContent = 'Force-Directed';
+            document.getElementById('panelBadge').style.background = 'rgba(13, 148, 136, 0.2)';
+            document.getElementById('panelBadge').style.color = 'var(--accent-teal-light)';
+            
+            // Show certification panel, hide recovery panel
+            document.getElementById('certificationPanel').classList.remove('hidden');
+            document.getElementById('recoveryPanel').classList.add('hidden');
+            
+            // Reset results tables
+            document.getElementById('resultsBody').innerHTML = `
+                <tr>
+                    <td colspan="3" style="text-align:center; color: var(--text-muted); padding: 30px;">
+                        Click "Analyze" to certify surgical plan transitions
+                    </td>
+                </tr>
+            `;
+            document.getElementById('recoveryBody').innerHTML = `
+                <tr>
+                    <td colspan="3" style="text-align:center; color: var(--text-muted); padding: 30px;">
+                        Click "Recover" to compute minimal recovery plan
+                    </td>
+                </tr>
+            `;
+        }
+    </script>
+</body>
+</html>

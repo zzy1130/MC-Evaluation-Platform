@@ -1,0 +1,125 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --gradient-start: #667eea;
+  --gradient-mid: #764ba2;
+  --gradient-end: #f093fb;
+}
+
+body {
+  @apply bg-midnight-950 text-midnight-100 font-sans;
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+  min-height: 100vh;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-midnight-900 rounded-full;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-midnight-600 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-midnight-500;
+}
+
+/* Code editor style */
+.code-editor {
+  @apply font-mono text-sm;
+  tab-size: 2;
+}
+
+.code-editor:focus {
+  outline: none;
+}
+
+/* Glass effect */
+.glass {
+  @apply bg-midnight-900/50 backdrop-blur-xl border border-midnight-700/50;
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glow effect */
+.glow {
+  box-shadow: 0 0 40px rgba(102, 126, 234, 0.15);
+}
+
+.glow-strong {
+  box-shadow: 0 0 60px rgba(102, 126, 234, 0.25);
+}
+
+/* Animated border */
+.animated-border {
+  position: relative;
+}
+
+.animated-border::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(90deg, #667eea, #764ba2, #f093fb, #667eea);
+  background-size: 300% 100%;
+  animation: gradient 4s linear infinite;
+  border-radius: inherit;
+  z-index: -1;
+  opacity: 0.5;
+}
+
+@keyframes gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Table styles */
+.results-table {
+  @apply w-full text-sm;
+}
+
+.results-table th {
+  @apply px-4 py-3 text-left text-midnight-300 font-semibold bg-midnight-800/50 border-b border-midnight-700;
+}
+
+.results-table td {
+  @apply px-4 py-3 border-b border-midnight-800/50;
+}
+
+.results-table tr:hover {
+  @apply bg-midnight-800/30;
+}
+
+/* Critical row */
+.row-critical {
+  @apply bg-red-500/10 border-l-4 border-l-red-500;
+}
+
+.row-warning {
+  @apply bg-amber-500/10 border-l-4 border-l-amber-500;
+}
+
+.row-normal {
+  @apply border-l-4 border-l-transparent;
+}
+
+/* PyVis iframe */
+.pyvis-frame {
+  @apply w-full h-full rounded-xl overflow-hidden;
+  border: none;
+}
+
